@@ -1,18 +1,24 @@
 import tkinter as tk
 from tkinter import messagebox
 import random
+import json
+import os
 
 
 class RockPaperScissors:
     def __init__(self, root):
         """
-        Initializes the Rock-Paper-Scissors game application.
+        Initializes the Rock-Paper-Scissors game application with data persistence.
         """
         self.root = root
         self.root.title("Rock-Paper-Scissors Game")
         self.root.geometry("400x500")
+        self.file_path = "rps_game_data.json"
+
+        # Load scores from file
         self.user_score = 0
         self.computer_score = 0
+        self.load_data()
 
         # UI Elements
         self.title_label = tk.Label(root, text="Rock-Paper-Scissors", font=("Arial", 20, "bold"))
@@ -36,10 +42,10 @@ class RockPaperScissors:
         self.result_label = tk.Label(root, text="", font=("Arial", 14), fg="blue")
         self.result_label.pack(pady=10)
 
-        self.score_label = tk.Label(root, text="Your Score: 0 | Computer Score: 0", font=("Arial", 14))
+        self.score_label = tk.Label(root, text=f"Your Score: {self.user_score} | Computer Score: {self.computer_score}", font=("Arial", 14))
         self.score_label.pack(pady=10)
 
-        self.play_again_button = tk.Button(root, text="Play Again", font=("Arial", 14), command=self.reset_game)
+        self.play_again_button = tk.Button(root, text="Reset Game", font=("Arial", 14), command=self.reset_game)
         self.play_again_button.pack(pady=10)
 
     def play_game(self, user_choice):
@@ -63,6 +69,9 @@ class RockPaperScissors:
             result = "You Lose!"
             self.computer_score += 1
 
+        # Save scores to file
+        self.save_data()
+
         # Update the result label
         self.result_label.config(text=f"You chose: {user_choice}\nComputer chose: {computer_choice}\n{result}")
 
@@ -71,12 +80,37 @@ class RockPaperScissors:
 
     def reset_game(self):
         """
-        Resets the game for another round.
+        Resets the game for another round and optionally deletes saved data.
         """
-        self.result_label.config(text="")
-        self.user_score = 0
-        self.computer_score = 0
-        self.score_label.config(text="Your Score: 0 | Computer Score: 0")
+        confirm = messagebox.askyesno("Reset Game", "Do you want to reset the scores and delete saved data?")
+        if confirm:
+            self.user_score = 0
+            self.computer_score = 0
+            if os.path.exists(self.file_path):
+                os.remove(self.file_path)
+            self.result_label.config(text="")
+            self.score_label.config(text="Your Score: 0 | Computer Score: 0")
+            messagebox.showinfo("Game Reset", "Scores and saved data have been reset.")
+        else:
+            self.result_label.config(text="Scores remain unchanged.")
+
+    def save_data(self):
+        """
+        Saves the current scores to a JSON file.
+        """
+        data = {"user_score": self.user_score, "computer_score": self.computer_score}
+        with open(self.file_path, "w") as file:
+            json.dump(data, file)
+
+    def load_data(self):
+        """
+        Loads the scores from a JSON file if it exists.
+        """
+        if os.path.exists(self.file_path):
+            with open(self.file_path, "r") as file:
+                data = json.load(file)
+                self.user_score = data.get("user_score", 0)
+                self.computer_score = data.get("computer_score", 0)
 
 
 if __name__ == "__main__":
